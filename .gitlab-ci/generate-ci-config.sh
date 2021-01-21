@@ -49,8 +49,8 @@ setup-gopass:
       - .ssh
 EOT
 
-grep --include=\*.tf -rwl -E '^\s+backend\s+"[^"]+"\s+{' | while read -r dir; do
-tf_root=$(dirname "$dir")
+find . -type f -name "*.tf" -print0 | xargs -0 grep -wl -E '^\s+backend\s+"[^"]+"\s+{' | while read -r dir; do
+tf_root=$(dirname "$dir" | sed -e "s/^\.\///g")
 workspace=$(echo "$tf_root" | sed -e "s@^\./@@"| tr "/" "_")
 
 cat << EOT
