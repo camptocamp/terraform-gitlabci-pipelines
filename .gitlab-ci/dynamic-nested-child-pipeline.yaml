@@ -1,0 +1,26 @@
+---
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+variables:
+  PARENT_PIPELINE_SOURCE: $CI_PIPELINE_SOURCE
+  ROOT_PIPELINE_SOURCE: $CI_PIPELINE_SOURCE
+
+generate-config:
+  stage: build
+  script:
+    - curl https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml
+  artifacts:
+    paths:
+      - generated-ci-config.yml
+
+child-pipeline:
+  stage: test
+  trigger:
+    include:
+      - artifact: generated-ci-config.yml
+        job: generate-config
+    strategy: depend

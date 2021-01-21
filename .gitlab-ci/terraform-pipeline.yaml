@@ -1,0 +1,128 @@
+---
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $ROOT_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+
+stages:
+  - check
+  - validate
+  - plan
+  - apply
+  - detailed-plan
+
+variables:
+  HOME: /tmp
+  LD_PRELOAD: /usr/local/lib/libnss_wrapper.so
+  NSS_WRAPPER_PASSWD: /tmp/passwd
+  NSS_WRAPPER_GROUP: /tmp/group
+  TF_IN_AUTOMATION: "true"
+  TF_PLUGIN_CACHE_DIR: $CI_PROJECT_DIR/.terraform.d/plugin-cache
+
+.generate-report: &generate-report |
+  summon -up terraform show -json plan.cache | \
+  jq -r '([.resource_changes[]?.change.actions?] | flatten) | {"create":(map(select(.=="create")) | length), "update":(map(select(.=="update")) | length), "delete":(map(select(.=="delete")) | length)}' | \
+  tee plan.json
+
+cache:
+  key: tf_plugin_cache_dir
+  paths:
+    - $TF_PLUGIN_CACHE_DIR
+
+.terraform:
+  image:
+    name: $TF_IMAGE_REPOSITORY:$TF_IMAGE_TAG
+  before_script:
+    - mv .gnupg .password-store .config .local .ssh ~/
+    - mkdir -p $TF_PLUGIN_CACHE_DIR
+    - echo "terraform:x:$(id -u):$(id -g):Terraform:$HOME:/bin/false" > "$NSS_WRAPPER_PASSWD"
+    - echo "terraform:x:$(id -g):" > "$NSS_WRAPPER_GROUP"
+    - cd "$TF_ROOT"
+
+lint:
+  stage: check
+  extends: .terraform
+  variables:
+    TF_PLUGIN_CACHE_DIR: ""
+  cache: {}
+  before_script:
+    - cd "$TF_ROOT"
+  script:
+    - terraform fmt
+  rules:
+    - if: $ROOT_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+validate:
+  stage: check
+  extends: .terraform
+  script:
+    - summon -up terraform init
+    - summon -up terraform validate
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: setup-gopass
+  rules:
+    - if: $ROOT_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+plan:
+  stage: plan
+  extends: .terraform
+  script:
+    - summon -up terraform init
+    - summon -up terraform plan -out plan.cache
+    - *generate-report
+  needs:
+    - job: lint
+    - job: validate
+    - pipeline: $PARENT_PIPELINE_ID
+      job: setup-gopass
+  artifacts:
+    paths:
+      - "$TF_ROOT/plan.cache"
+    reports:
+      terraform: "$TF_ROOT/plan.json"
+  rules:
+    - if: $ROOT_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+apply:
+  stage: apply
+  extends: .terraform
+  script:
+    - summon -up terraform init
+    - summon -up terraform apply -auto-approve plan.cache
+  needs:
+    - job: plan
+    - pipeline: $PARENT_PIPELINE_ID
+      job: setup-gopass
+  rules:
+    - if: $ROOT_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+detailed-plan:
+  stage: detailed-plan
+  extends: .terraform
+  script:
+    - summon -up terraform init
+    - summon -up terraform plan -detailed-exitcode -out plan.cache
+    - *generate-report
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: setup-gopass
+  artifacts:
+    reports:
+      terraform: "$TF_ROOT/plan.json"
+  rules:
+    - if: $ROOT_PIPELINE_SOURCE == "schedule"
