@@ -10,9 +10,11 @@ variables:
   ROOT_PIPELINE_SOURCE: $CI_PIPELINE_SOURCE
 
 generate-config:
+  image:
+    name: curlimages/curl:7.74.0
   stage: build
   script:
-    - if `command -v wget > /dev/null`; then wget -O - -q https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml; else curl https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml; fi
+    - curl https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml
   artifacts:
     paths:
       - generated-ci-config.yml
