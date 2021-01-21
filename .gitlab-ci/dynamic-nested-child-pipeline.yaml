@@ -12,7 +12,7 @@ variables:
 generate-config:
   stage: build
   script:
-    - curl https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml
+    - if `command -v wget > /dev/null`; then wget -O - -q https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml; else curl https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/generate-ci-config.sh > generated-ci-config.yml; fi
   artifacts:
     paths:
       - generated-ci-config.yml
