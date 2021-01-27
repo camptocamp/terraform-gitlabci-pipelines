@@ -15,8 +15,7 @@ variables:
 
 .init-ssh: &init-ssh |
   mkdir -p ~/.ssh
-  gopass $SSH_KEY_SECRET_PATH id_rsa > ~/.ssh/id_rsa
-  gopass $SSH_KEY_SECRET_PATH id_rsa.pub > ~/.ssh/id_rsa.pub
+  echo $TERRAFORM_SSH_KEY id_rsa > ~/.ssh/id_rsa
   chmod 0600 ~/.ssh/id_rsa
   ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   cp -a ~/.ssh .
