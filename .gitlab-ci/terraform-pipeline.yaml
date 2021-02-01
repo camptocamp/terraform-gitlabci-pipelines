@@ -85,8 +85,9 @@ plan:
     - pipeline: $PARENT_PIPELINE_ID
       job: setup-gopass
   artifacts:
-    paths:
-      - "$TF_ROOT/plan.cache"
+    untracked: true
+    exclude:
+      - "$TF_ROOT/.terraform/"
     reports:
       terraform: "$TF_ROOT/plan.json"
   rules:
