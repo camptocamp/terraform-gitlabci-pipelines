@@ -87,7 +87,8 @@ plan:
   artifacts:
     untracked: true
     exclude:
-      - "$TF_ROOT/.terraform/"
+      - .terraform.d
+      - "$TF_ROOT/.terraform"
     reports:
       terraform: "$TF_ROOT/plan.json"
   rules:
