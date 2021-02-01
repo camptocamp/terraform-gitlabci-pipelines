@@ -40,6 +40,9 @@ cache:
     - echo "terraform:x:$(id -u):$(id -g):Terraform:$HOME:/bin/false" > "$NSS_WRAPPER_PASSWD"
     - echo "terraform:x:$(id -g):" > "$NSS_WRAPPER_GROUP"
     - cd "$TF_ROOT"
+  after_script:
+    - rm -r .terraform.d
+    - rm -r "$TF_ROOT"/.terraform
 
 lint:
   stage: check
@@ -86,9 +89,6 @@ plan:
       job: setup-ssh
   artifacts:
     untracked: true
-    exclude:
-      - .terraform.d
-      - "$TF_ROOT/.terraform"
     reports:
       terraform: "$TF_ROOT/plan.json"
   rules:
