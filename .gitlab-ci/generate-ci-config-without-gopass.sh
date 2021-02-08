@@ -50,7 +50,7 @@ if [ "$PARENT_PIPELINE_SOURCE" != "schedule" ]; then
 	cat << EOT
   rules:
     - changes:
-        - "$tf_root/*"
+        - "$tf_root/**/*"
 EOT
 fi
 done
