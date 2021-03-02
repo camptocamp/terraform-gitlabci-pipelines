@@ -1,3 +1,4 @@
+# Python version: 2.7.17
 # Requires: pip install requests semantic_version pyhcl
 import argparse
 import requests
