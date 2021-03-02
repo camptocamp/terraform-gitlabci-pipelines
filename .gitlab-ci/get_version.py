@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Requires: pip install requests semantic_version pyhcl
 import argparse
 import requests
@@ -43,7 +41,7 @@ def main(args):
     try:
         constraint = hcl.load(input_file)['terraform']['required_version']
     except:
-        print('No required version, the latest will be used.')
+        # Using the latest version
         constraint = '>= 0.1.0'
     token = get_token(args.username, args.password)
     all_versions = sorted(get_versions(args.repository, token), key=LooseVersion)
