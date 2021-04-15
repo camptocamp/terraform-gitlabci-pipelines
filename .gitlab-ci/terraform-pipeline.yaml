@@ -53,6 +53,7 @@ lint:
   before_script:
     - cd "$TF_ROOT"
   script:
+    - terraform version
     - terraform fmt
   rules:
     - if: $ROOT_PIPELINE_SOURCE == "schedule"
