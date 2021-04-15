@@ -1,21 +1,21 @@
 #!/bin/sh
 
-cat << 'EOT'
+cat << EOT
 workflow:
   rules:
-    - if: $CI_MERGE_REQUEST_IID
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $PARENT_PIPELINE_SOURCE == "schedule"
+    - if: \$CI_MERGE_REQUEST_IID
+    - if: \$CI_COMMIT_BRANCH == \$CI_DEFAULT_BRANCH
+    - if: \$PARENT_PIPELINE_SOURCE == "schedule"
 
 variables:
-  PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-  ROOT_PIPELINE_SOURCE: $ROOT_PIPELINE_SOURCE
-  TF_IMAGE_REPOSITORY: camptocamp/terraform
-  TF_IMAGE_TAG: 0.13.6
+  PARENT_PIPELINE_ID: \$CI_PIPELINE_ID
+  ROOT_PIPELINE_SOURCE: \$ROOT_PIPELINE_SOURCE
+  TF_IMAGE_REPOSITORY: ${TF_IMAGE_REPOSITORY:=camptocamp/terraform}
+  TF_IMAGE_TAG: ${TF_IMAGE_TAG:=0.13.6}
 
 .init-ssh: &init-ssh |
   mkdir -p ~/.ssh
-  echo $TERRAFORM_SSH_KEY id_rsa > ~/.ssh/id_rsa
+  echo \$TERRAFORM_SSH_KEY id_rsa > ~/.ssh/id_rsa
   chmod 0600 ~/.ssh/id_rsa
   ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   cp -a ~/.ssh .
