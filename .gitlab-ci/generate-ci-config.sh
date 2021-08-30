@@ -10,7 +10,7 @@ workflow:
 variables:
   PARENT_PIPELINE_ID: $CI_PIPELINE_ID
   ROOT_PIPELINE_SOURCE: $ROOT_PIPELINE_SOURCE
-  TF_IMAGE_REPOSITORY: camptocamp/terraform
+  TF_IMAGE_REPOSITORY: ghcr.io/camptocamp/terraform
   TF_IMAGE_TAG: 1.0.5
 
 .init-gpg: &init-gpg |
