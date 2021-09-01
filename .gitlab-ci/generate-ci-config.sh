@@ -11,7 +11,7 @@ variables:
   PARENT_PIPELINE_ID: $CI_PIPELINE_ID
   ROOT_PIPELINE_SOURCE: $ROOT_PIPELINE_SOURCE
   TF_IMAGE_REPOSITORY: ghcr.io/camptocamp/terraform
-  TF_IMAGE_TAG: 1.0.5
+  TF_IMAGE_TAG: 1.0.4
 
 .init-gpg: &init-gpg |
   uid=$(bash -c 'gpg --with-colons --import-options import-show --import --quiet <(echo "$GPG_SECRET_KEY")'|grep ^uid:|sed -n 's/.*<\(.*\)>.*/\1/p')
