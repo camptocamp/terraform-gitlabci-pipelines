@@ -46,6 +46,18 @@ variables:
     --user $TERRABOARD_USER:$TERRABOARD_PASSWORD \
     $TERRABOARD_URL/api/plans
 
+.exec-detailed-plan: &exec-detailed-plan |
+  summon -up terraform plan   -out plan.cache
+  plan_exit_code=$?
+
+  if [ $plan_exit_code -ne 1 ]
+  then
+    *generate-report
+    *push-plan
+  fi
+
+  exit $plan_exit_code 
+
 cache:
   key: tf_plugin_cache_dir
   paths:
@@ -138,9 +150,7 @@ detailed-plan:
   extends: .terraform
   script:
     - summon -up terraform init
-    - summon -up terraform plan -detailed-exitcode -out plan.cache
-    - *generate-report
-    - *push-plan
+    - *exec-detailed-plan
   needs:
     - pipeline: $PARENT_PIPELINE_ID
       job: setup-gopass
