@@ -157,5 +157,3 @@ detailed-plan:
   artifacts:
     reports:
       terraform: "$TF_ROOT/plan.json"
-  rules:
-    - if: $ROOT_PIPELINE_SOURCE == "schedule"
