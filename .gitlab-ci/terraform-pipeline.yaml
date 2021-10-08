@@ -30,34 +30,31 @@ variables:
   summon -up terraform plan -detailed-exitcode -out plan.cache
   plan_exit_code=$?
 
-  if [ $plan_exit_code -ne 1 ]
-  then
-    # Generate report
-    summon -up terraform show -json plan.cache | \
-    jq -r '([.resource_changes[]?.change.actions?] | flatten) | {"create":(map(select(.=="create")) | length), "update":(map(select(.=="update")) | length), "delete":(map(select(.=="delete")) | length)}' | \
-    tee plan.json
+  # Generate report
+  summon -up terraform show -json plan.cache | \
+  jq -r '([.resource_changes[]?.change.actions?] | flatten) | {"create":(map(select(.=="create")) | length), "update":(map(select(.=="update")) | length), "delete":(map(select(.=="delete")) | length)}' | \
+  tee plan.json
 
-    # Export state and plan data to JSON 
-    summon -up terraform state pull > state.json
-    summon -up terraform show -json plan.cache > plan2.json
+  # Export state and plan data to JSON 
+  summon -up terraform state pull > state.json
+  summon -up terraform show -json plan.cache > plan2.json
 
-    # Build payload and send it to Terraboard
-    lineage=$(cat state.json | jq -r '.lineage')
-    terraform_version=$(cat plan2.json | jq -r '.terraform_version')
-    git_remote="$CI_PROJECT_URL"
-    git_commit="$CI_COMMIT_SHORT_SHA"
-    ci_url="$CI_JOB_URL"
-    source="Gitlab CI pipeline"
+  # Build payload and send it to Terraboard
+  lineage=$(cat state.json | jq -r '.lineage')
+  terraform_version=$(cat plan2.json | jq -r '.terraform_version')
+  git_remote="$CI_PROJECT_URL"
+  git_commit="$CI_COMMIT_SHORT_SHA"
+  ci_url="$CI_JOB_URL"
+  source="Gitlab CI pipeline"
 
-    cat plan2.json | jq -r "{\"lineage\": \"$lineage\", \"terraform_version\": \"$terraform_version\", \"git_remote\": \"$git_remote\", \"git_commit\": \"$git_commit\", \"ci_url\": \"$ci_url\", \"source\": \"$source\", \"plan_json\": .}" > plan_terraboard.json
+  cat plan2.json | jq -r "{\"lineage\": \"$lineage\", \"terraform_version\": \"$terraform_version\", \"git_remote\": \"$git_remote\", \"git_commit\": \"$git_commit\", \"ci_url\": \"$ci_url\", \"source\": \"$source\", \"exit_code\": $plan_exit_code, \"plan_json\": .}" > plan_terraboard.json
 
-    curl \
-      --header "Content-Type: application/json" \
-      --request POST \
-      --data @plan_terraboard.json \
-      --user $TERRABOARD_USER:$TERRABOARD_PASSWORD \
-      $TERRABOARD_URL/api/plans
-  fi
+  curl \
+    --header "Content-Type: application/json" \
+    --request POST \
+    --data @plan_terraboard.json \
+    --user $TERRABOARD_USER:$TERRABOARD_PASSWORD \
+    $TERRABOARD_URL/api/plans
 
   exit $plan_exit_code 
 
