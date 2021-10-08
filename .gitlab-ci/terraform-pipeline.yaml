@@ -27,8 +27,7 @@ variables:
   tee plan.json
 
 .send-detailed-plan: &send-detailed-plan |
-  summon -up terraform plan -detailed-exitcode -out plan.cache
-  plan_exit_code=$?
+  summon -up terraform plan -detailed-exitcode -out plan.cache || PLAN_EXIT_CODE=$?
 
   # Generate report
   summon -up terraform show -json plan.cache | \
@@ -47,7 +46,7 @@ variables:
   ci_url="$CI_JOB_URL"
   source="Gitlab CI pipeline"
 
-  cat plan2.json | jq -r "{\"lineage\": \"$lineage\", \"terraform_version\": \"$terraform_version\", \"git_remote\": \"$git_remote\", \"git_commit\": \"$git_commit\", \"ci_url\": \"$ci_url\", \"source\": \"$source\", \"exit_code\": $plan_exit_code, \"plan_json\": .}" > plan_terraboard.json
+  cat plan2.json | jq -r "{\"lineage\": \"$lineage\", \"terraform_version\": \"$terraform_version\", \"git_remote\": \"$git_remote\", \"git_commit\": \"$git_commit\", \"ci_url\": \"$ci_url\", \"source\": \"$source\", \"exit_code\": $PLAN_EXIT_CODE, \"plan_json\": .}" > plan_terraboard.json
 
   curl \
     --header "Content-Type: application/json" \
@@ -56,7 +55,7 @@ variables:
     --user $TERRABOARD_USER:$TERRABOARD_PASSWORD \
     $TERRABOARD_URL/api/plans
 
-  exit $plan_exit_code 
+  exit $PLAN_EXIT_CODE 
 
 cache:
   key: tf_plugin_cache_dir
