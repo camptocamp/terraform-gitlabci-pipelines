@@ -61,7 +61,7 @@ $workspace:
     TF_ROOT: "$tf_root"
   trigger:
     include:
-      - https://raw.githubusercontent.com/hbollon/terraform-gitlabci-pipelines/test/.gitlab-ci/terraform-pipeline.yaml
+      - https://raw.githubusercontent.com/camptocamp/terraform-gitlabci-pipelines/master/.gitlab-ci/terraform-pipeline.yaml
     strategy: depend
 EOT
 if [ "$PARENT_PIPELINE_SOURCE" != "schedule" ]; then
