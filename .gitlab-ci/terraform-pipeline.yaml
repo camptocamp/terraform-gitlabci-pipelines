@@ -26,10 +26,19 @@ variables:
   jq -r '([.resource_changes[]?.change.actions?] | flatten) | {"create":(map(select(.=="create")) | length), "update":(map(select(.=="update")) | length), "delete":(map(select(.=="delete")) | length)}' | \
   tee plan.json
 
-.push-plan: &push-plan |
+.send-detailed-plan: &send-detailed-plan |
+  summon -up terraform plan -detailed-exitcode -out plan.cache || PLAN_EXIT_CODE=$?
+
+  # Generate report
+  summon -up terraform show -json plan.cache | \
+  jq -r '([.resource_changes[]?.change.actions?] | flatten) | {"create":(map(select(.=="create")) | length), "update":(map(select(.=="update")) | length), "delete":(map(select(.=="delete")) | length)}' | \
+  tee plan.json
+
+  # Export state and plan data to JSON 
   summon -up terraform state pull > state.json
   summon -up terraform show -json plan.cache > plan2.json
 
+  # Build payload and send it to Terraboard
   lineage=$(cat state.json | jq -r '.lineage')
   terraform_version=$(cat plan2.json | jq -r '.terraform_version')
   git_remote="$CI_PROJECT_URL"
@@ -37,7 +46,7 @@ variables:
   ci_url="$CI_JOB_URL"
   source="Gitlab CI pipeline"
 
-  cat plan2.json | jq -r "{\"lineage\": \"$lineage\", \"terraform_version\": \"$terraform_version\", \"git_remote\": \"$git_remote\", \"git_commit\": \"$git_commit\", \"ci_url\": \"$ci_url\", \"source\": \"$source\", \"plan_json\": .}" > plan_terraboard.json
+  cat plan2.json | jq -r "{\"lineage\": \"$lineage\", \"terraform_version\": \"$terraform_version\", \"git_remote\": \"$git_remote\", \"git_commit\": \"$git_commit\", \"ci_url\": \"$ci_url\", \"source\": \"$source\", \"exit_code\": $PLAN_EXIT_CODE, \"plan_json\": .}" > plan_terraboard.json
 
   curl \
     --header "Content-Type: application/json" \
@@ -45,6 +54,8 @@ variables:
     --data @plan_terraboard.json \
     --user $TERRABOARD_USER:$TERRABOARD_PASSWORD \
     $TERRABOARD_URL/api/plans
+
+  exit $PLAN_EXIT_CODE 
 
 cache:
   key: tf_plugin_cache_dir
@@ -138,9 +149,7 @@ detailed-plan:
   extends: .terraform
   script:
     - summon -up terraform init
-    - summon -up terraform plan -detailed-exitcode -out plan.cache
-    - *generate-report
-    - *push-plan
+    - *send-detailed-plan
   needs:
     - pipeline: $PARENT_PIPELINE_ID
       job: setup-gopass
